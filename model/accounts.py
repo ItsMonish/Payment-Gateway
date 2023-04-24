@@ -1,19 +1,14 @@
-import sqlite3
 from os import environ
 from Connectors.connection import Connection
-from dotenv import load_dotenv
-import json
 
-load_dotenv()
-ACC_BASE = 1000000
 conn = Connection.get(environ.get('DATABASE_PATH'))
 db_cursor = conn.cursor()
-records = db_cursor.execute("SELECT COUNT(*) FROM Accounts").fetchone()[0]
+
 class Account:
 
     def __init__(self, name, balance, username, password) -> None:
-        global records
-        global ACC_BASE
+        ACC_BASE = 1000000
+        records = db_cursor.execute("SELECT COUNT(*) FROM Accounts").fetchone()[0]
         self.account_holder_name = name
         self.account_number = "{}".format(ACC_BASE + records)
         self.accout_balance = balance
@@ -37,7 +32,7 @@ def create_account(name, username, password, balance) -> Account:
     return new_account
 
     
-def get_account_details(acc_number) -> dict:
+def getAccountByAccNumber(acc_number) -> dict:
     requested_account = dict()
     result = db_cursor.execute('SELECT * FROM Accounts WHERE account_number = ?',(acc_number,)).fetchone()
     requested_account['Account Holder Name'] = result[1]
@@ -46,5 +41,34 @@ def get_account_details(acc_number) -> dict:
     requested_account['Username'] = result[3]
     return requested_account
 
-acc = get_account_details(1000001)
-print(json.dumps(acc,indent=4))
+def getAccountByUsername(username) -> dict:
+    requested_account = dict()
+    result = db_cursor.execute('SELECT * FROM Accounts WHERE username = ?',(username,)).fetchone()
+    requested_account['Account Holder Name'] = result[1]
+    requested_account['Account Number'] = result[0]
+    requested_account['Balance'] = result[2]
+    requested_account['Username'] = result[3]
+    return requested_account
+
+def creditBalance(acc_number,amount) -> bool:
+    target_account = db_cursor.execute('SELECT * FROM Accounts WHERE account_number = ?',(acc_number,)).fetchone()
+    if target_account == None:
+        return False
+    balance = target_account[2]
+    db_cursor.execute('UPDATE Accounts SET balance = ? WHERE account_number = ?',(amount+balance,acc_number))
+    return True
+
+def debitBalance(acc_number,amount) -> bool:
+    target_account = db_cursor.execute('SELECT * FROM Accounts WHERE account_number = ?',(acc_number,)).fetchone()
+    if target_account == None:
+        return False
+    balance = target_account[2]
+    db_cursor.execute('UPDATE Accounts SET balance = ? WHERE account_number = ?',(balance-amount,acc_number))
+    return True
+
+def deleteAccount(acc_number) -> bool:
+    target_account = db_cursor.execute('SELECT * FROM Accounts WHERE account_number = ?',(acc_number,)).fetchone()
+    if target_account == None:
+        return False
+    db_cursor.execute('DELETE FROM Accounts WHERE account_number = ?',(acc_number,))
+    return True
