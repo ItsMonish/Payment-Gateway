@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request, Response
 from model.Accounts.accounts import *
 from model.transactions import *
+from model.authenticator import *
 import json
 
 service = Flask(__name__)
@@ -11,13 +12,36 @@ def display_doc():
     return render_template("index.html")
 
 
+@service.route("/login", methods=["POST"])
+def loginService():
+    creds = json.loads(request.data)
+    try:
+        user_name = creds["username"]
+        passwd = creds["password"]
+    except KeyError:
+        return "NO_CREDENTIALS_FOUND", 400
+    token = Account.validateUser(user_name, passwd)
+    if token == None:
+        return "INVALID_CREDENTIALS", 400
+    return jsonify({"token": token}), 200
+
+
 @service.route("/account/<in_var>", methods=["GET"])
 def getaccounts(in_var) -> Response:
+    token = getAuthToken(request)
+    if token == "1":
+        return "NO_AUTH_HEADER", 401
+    elif token == "2":
+        return "BAD_AUTH_HEADER", 400
+    else:
+        pass
     req_account = getAccountByAccNumber(str(in_var))
     if req_account == None:
         req_account = getAccountByUsername(str(in_var))
         if req_account == None:
             return "ACCOUNT_NOT_FOUND", 404
+    if not validateAccountToken(token, req_account):
+        return "UNAUTHORIZED_ACCESS", 401
     txns = fetchTransactions(req_account["Account Number"])
     return jsonify(req_account, {"transactions": txns})
 
@@ -25,6 +49,15 @@ def getaccounts(in_var) -> Response:
 @service.route("/account", methods=["PUT"])
 def addAccount() -> Response:
     new_acc = json.loads(request.data)
+    token = getAuthToken(request)
+    if token == "1":
+        return "NO_AUTH_HEADER", 401
+    elif token == "2":
+        return "BAD_AUTH_HEADER", 400
+    else:
+        pass
+    if not isAdminToken(token):
+        return "ADMIN_ACTION_ONLY", 403
     created_acc = create_account(
         new_acc["holder_name"],
         new_acc["username"],
@@ -40,6 +73,15 @@ def addAccount() -> Response:
 
 @service.route("/account/<in_var>", methods=["DELETE"])
 def findAndDelete(in_var) -> Response:
+    token = getAuthToken(request)
+    if token == "1":
+        return "NO_AUTH_HEADER", 401
+    elif token == "2":
+        return "BAD_AUTH_HEADER", 400
+    else:
+        pass
+    if not isAdminToken(token):
+        return "ADMIN_ACTION_ONLY", 403
     if deleteAccount(in_var):
         return "DELETE_SUCCESSFUL", 204
     else:
@@ -48,7 +90,16 @@ def findAndDelete(in_var) -> Response:
 
 @service.route("/transaction", methods=["POST"])
 def performTransaction() -> Response:
+    token = getAuthToken(request)
+    if token == "1":
+        return "NO_AUTH_HEADER", 401
+    elif token == "2":
+        return "BAD_AUTH_HEADER", 400
+    else:
+        pass
     txn_details = json.loads(request.data)
+    if not validateAccountToken(token, getAccountByAccNumber(txn_details["origin"])):
+        return "UNAUTHORIZED_ACCESS", 401
     new_txn = Transaction(
         txn_details["origin"], txn_details["destination"], txn_details["amt"]
     )
