@@ -50,6 +50,7 @@ class Account:
         thisuser = Account(result[1], result[2], result[3], result[4], result[0])
         thisuser.role = result[5]
         claimpass = sha256(password.encode()).hexdigest()
+        print(claimpass)
         if claimpass == thisuser.password:
             return thisuser.generateAuthToken()
         else:
@@ -64,9 +65,9 @@ class Account:
         return data["userid"]
 
 
-def getRole(acc_num) -> str:
+def getRole(uname) -> str:
     result = db_cursor.execute(
-        "SELECT * FROM Accounts WHERE username = ?", (acc_num,)
+        "SELECT * FROM Accounts WHERE username = ?", (uname,)
     ).fetchone()
     return result[5]
 

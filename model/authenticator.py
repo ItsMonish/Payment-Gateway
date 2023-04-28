@@ -1,5 +1,5 @@
 from flask import request
-from Accounts.accounts import *
+from .Accounts.accounts import *
 
 
 def getAuthToken(in_request: request) -> str:
@@ -18,7 +18,7 @@ def validateAccountToken(token: str, acc: dict) -> bool:
         return False
     elif token_un == acc["Username"]:
         return True
-    elif token_un != acc["Username"] and getRole(acc["Account Number"] == "Admin"):
+    elif getRole(token_un) == "Admin":
         return True
     else:
         return False

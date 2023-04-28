@@ -80,7 +80,7 @@ def findAndDelete(in_var) -> Response:
         return "BAD_AUTH_HEADER", 400
     else:
         pass
-    if not isAdminToken(token):
+    if isAdminToken(token):
         return "ADMIN_ACTION_ONLY", 403
     if deleteAccount(in_var):
         return "DELETE_SUCCESSFUL", 204
@@ -149,9 +149,9 @@ def performTransaction() -> Response:
         )
 
 
-@service.route("/transactions/str:<in_var>")
+@service.route("/transactions/<in_var>")
 def findTransaction(in_var) -> Response:
-    req_txn = findTransaction(in_var)
+    req_txn = returnTransaction(in_var)
     if req_txn == None:
         return "TRANSACTION_ID_NOT_FOUND", 404
     return jsonify(req_txn), 200
