@@ -4,6 +4,132 @@
 </head>
 <html>
   <body>
-    <h1>Todo: Documentation of the API</h1>
+    <h1>Payment Gateway using REST API</h1>
+    <h2>Documentation</h2>
+    <h3>Login</h3>
+    <p>
+      The Web service makes use of JWT authentication to perform actions. Hence,
+      it is necessary to procure a token before performing actions
+    </p>
+    <p>
+      To get token, a POST request must be made to
+      <samp>http://localhost/login</samp> with request data containing
+      <samp>username</samp> and <samp>password</samp>. Upon correct credentials
+      a token will be returned as a response
+    </p>
+    <p>Other possible outcomes of the request could be:</p>
+    <ul>
+      <li>
+        <samp>NO_CREDENTIALS_FOUND</samp> - Either credentials were not passed
+        along or not with proper attribute names
+      </li>
+      <li>
+        <samp>INVALID_CREDENTIALS</samp> - Credentials passed along are invalid
+      </li>
+    </ul>
+    <h4>
+      NOTE: Further more all actions will require a Authentication HTTP header
+      in format
+      <samp style="font-size: large">bearer &lt;Token&gt;.</samp> Failure to
+      provide with the header or bad formatting might lead to
+      <samp>NO_AUTH_HEADER</samp> or <samp>BAD_AUTH_HEADER</samp> response.
+    </h4>
+    <h3>Creating Account</h3>
+    <p>
+      Creation of account is Admin role action, normal users are unauthorized to
+      do that.
+    </p>
+    <p>
+      To create a account a PUT request to
+      <samp>http://localhost/account</samp> must be made with a body containing
+      <samp>holder_name</samp>, <samp>username</samp>, <samp>password</samp> and
+      <samp>balance</samp> of the account to be opened
+    </p>
+    <p>
+      Upon successful creation of account, the new Account number, account
+      holder's name, username associated with the account and balance of the
+      created account are returned
+    </p>
+    <p>Error codes to the action include:</p>
+    <ul>
+      <li>
+        <samp>ADMIN_ACTION_ONLY</samp> - A non-admin account has been used to
+        call the action
+      </li>
+      <li>
+        <samp>USERNAME_ALREADY_EXISTS</samp> - The unique constraint of username
+        is violated. Try again with another username
+      </li>
+    </ul>
+    <h3>Deleting account</h3>
+    <p>Like creating account, deleting an account is an admin action</p>
+    <p>
+      To delete a account a DELETE request must be made to
+      <samp>http://localhost/account/&lt;account_number&gt;</samp>
+    </p>
+    <p>On successful deletion, a response code 204 is returned</p>
+    <p>Error codes to the action include:</p>
+    <ul>
+      <li>
+        <samp>ADMIN_ACTION_ONLY</samp> - A non-admin account has been used to
+        call the action
+      </li>
+      <li>
+        <samp>ACCOUNT_NOT_FOUND</samp> - The account number passed fail to exist
+      </li>
+    </ul>
+    <h3>Pulling account details</h3>
+    <p>
+      An account holder can only pull their account detials along with
+      transaction history. An admin role account can pull any account details
+    </p>
+    <p>
+      To request account details, make a GET request to
+      <samp>http://localhost/account/&lt;account_number&gt;</samp> or to
+      <samp>http://localhost/account/&lt;username&gt;</samp>
+      On successful and authorized request, the account holder's name,
+      associated username, balance, account number and transaction history will
+      returned.
+    </p>
+    <p>Error codes to the action include:</p>
+    <ul>
+      <li>
+        <samp>ACCOUNT_NOT_FOUND</samp> - The account number passed fail to exist
+      </li>
+      <li>
+        <samp>UNAUTHORIZED_ACCESS</samp> - The account details requested doesn't
+        belong to the requester
+      </li>
+    </ul>
+    <h3>Start transaction</h3>
+    <p>
+      A transaction must be only initiated when the origin account of the
+      transaction and the account that starts the transaction are the same
+    </p>
+    <p>
+      To start a transaction, make a POST request to
+      <samp>http://localhost/transaction</samp> with details such as
+      <samp>origin</samp>, <samp>destination</samp> and <samp>amt</samp>.
+    </p>
+    <p>
+      On successful transaction, a message saying
+      <samp>TRANSACTION_SUCCESS</samp> and the transaction ID will be returned.
+    </p>
+    <p>
+      For failed transaction, a message saying <samp>TRANSACTION_FAILED</samp>,
+      the transaction ID and a error message will be given. The error message
+      can be:
+    </p>
+    <ul>
+      <li>
+        <samp>DESTINATION_NOT_FOUND</samp> - The account given as destination
+        doesn't exist.
+      </li>
+      <li>
+        <samp>INSUFFICIENT_BALANCE</samp> - The origin account doesn't have
+        sufficient balance to make the transaction happen. A minimum balance of
+        500 units is expected to be retained after transaction.
+      </li>
+    </ul>
   </body>
 </html>
