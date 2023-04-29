@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, Response
+from flask import Flask, render_template, jsonify, request, Response, redirect, url_for
 from model.Accounts.accounts import *
 from model.transactions import *
 from model.authenticator import *
@@ -8,6 +8,11 @@ service = Flask(__name__)
 
 
 @service.route("/")
+def redirect_to_doc():
+    return redirect(url_for("display_doc"))
+
+
+@service.route("/help")
 def display_doc():
     return render_template("index.html")
 
@@ -80,10 +85,10 @@ def findAndDelete(in_var) -> Response:
         return "BAD_AUTH_HEADER", 400
     else:
         pass
-    if isAdminToken(token):
+    if not isAdminToken(token):
         return "ADMIN_ACTION_ONLY", 403
     if deleteAccount(in_var):
-        return "DELETE_SUCCESSFUL", 204
+        return "", 204
     else:
         return "ACCOUNT_NOT_FOUND", 404
 
@@ -149,12 +154,9 @@ def performTransaction() -> Response:
         )
 
 
-@service.route("/transactions/<in_var>")
-def findTransaction(in_var) -> Response:
-    req_txn = returnTransaction(in_var)
-    if req_txn == None:
-        return "TRANSACTION_ID_NOT_FOUND", 404
-    return jsonify(req_txn), 200
+@service.errorhandler(404)
+def return_notFound():
+    return "INVALID_URL", 404
 
 
 if __name__ == "__main__":
